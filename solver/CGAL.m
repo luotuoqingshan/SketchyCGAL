@@ -29,10 +29,11 @@ ERR = {};
 SAVEHIST = unique([2.^(0:floor(log2(T))),T])';
 
 SCALE_A = 1; % can be a scale or vector of size b
-SCALE_C = 1; % a scale only
-SCALE_X = 1; % a scale only
+SCALE_C = 1; % a scalar only
+SCALE_X = 1; % a scalar only
 NORM_A = 1; % Ideally, this should be norm of A
 
+% read keyword list
 if ~isempty(varargin)
     for tt = 1:2:length(varargin)
         switch lower(varargin{tt})
@@ -94,11 +95,16 @@ if ~isempty(varargin)
     end
 end
 
-% Scale the problem
-b_org = b;
-a_org = a;
+% Scale the problem, save the original value 
+% org stands for orginial
+b_org = b; % bound on constraints
+a_org = a; % bound on trace
 RESCALE_OBJ = 1;
 RESCALE_FEAS = 1;
+% anonymous functions for three primitives defined in the paper
+% Primitive1 is u -> Cu, i.e. evaluating the objective
+% Primitive2 is (u, z) -> (A^* z) u
+% Primitive3 is (u) -> A(uu^*)
 Primitive1_org = @(x) Primitive1(x);
 Primitive2_org = @(y,x) Primitive2(y,x);
 Primitive3_org = @(x) Primitive3(x);
@@ -120,7 +126,7 @@ if SCALE_C ~= 1
 end
 
 if FLAG_INCLUSION
-    PROJBOX = @(y) min(max(y,b(:,1)),b(:,2));
+    PROJBOX = @(y) min(max(y,b(:,1)),b(:,2)); % project a vector into a rectangular-bounded box
 end
 % projK = @(y) projK(y.*scaleFeas)./scaleFeas; %check this
 
@@ -128,11 +134,12 @@ end
 [out, errNames, errNamesPrint, ptr] = createErrStructs();
 
 % Initialize the decision variable and the dual
-if FLAG_METHOD == 0
+if FLAG_METHOD == 0 %CGAL
     X = zeros(n,n);
-elseif FLAG_METHOD == 1
+elseif FLAG_METHOD == 1 %SketchyCGAL
+    % SKETCH_FIELD is the FIELD F we sketch on, we usually use R.
     mySketch = NystromSketch(n, R, SKETCH_FIELD);
-elseif FLAG_METHOD == 2
+elseif FLAG_METHOD == 2 %ThinSketchyCGAL
     UTHIN = zeros(n,1);
     DTHIN = 0;
 else
@@ -140,8 +147,8 @@ else
 end
 
 % Initialize the dual
-z = zeros(size(b,1),1);
-y0 = zeros(size(b,1),1);
+z = zeros(size(b,1),1); % z stores A(X)
+y0 = zeros(size(b,1),1); % y is the dual variable
 y = y0;
 pobj = 0;
 
@@ -150,7 +157,7 @@ if FLAG_LANCZOS == 2
     ApproxMinEvec = @(x,t) ApproxMinEvecLanczosSE(x, n, ceil((t^0.25)*log(n))); % Lanczos storage optimal implementation (Storage optimal but requires 2 times more Matrix-vector multiplication)
 elseif FLAG_LANCZOS == 1
     ApproxMinEvec = @(x,t) ApproxMinEvecLanczos(x, n, ceil((t^0.25)*log(n))); % Lanczos (Almost-storage optimal but arithmetically faster)
-else
+else % power method only requires n storage
     ApproxMinEvec = @(x,t) ApproxMinEvecPower(x, n, ceil(8*(t^0.5)*log(n))); % Power method (Storage-optimal but very slow)
 end
 
@@ -171,11 +178,14 @@ for t = 1:T
     beta = beta0*sqrt(t+1);
     eta = 2/(t+1);
     
-    if FLAG_INCLUSION
+    if FLAG_INCLUSION % Look at Appendix D
         vt = y + beta.*(z - PROJBOX(z + (1/beta).*y));
     else
         vt = y + beta*(z-b);
     end
+    % Remember that the argument for the eigenvalue subproblem
+    % is D_t, which is defined in (3.4)
+    % C + A*(vt), here we can imagine eigsArg as an operator
     eigsArg = @(u) Primitive1(u) + Primitive2(vt,u);
     
     [u,sig,cntInner] = ApproxMinEvec(eigsArg,t);
