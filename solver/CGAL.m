@@ -26,6 +26,7 @@ FLAG_MULTRANK_P1 = false;
 FLAG_MULTRANK_P3 = false;
 SKETCH_FIELD = 'real'; % 'real' or 'complex'
 ERR = {};
+% power of 2 up to T(T included)
 SAVEHIST = unique([2.^(0:floor(log2(T))),T])';
 
 SCALE_A = 1; % can be a scale or vector of size b
@@ -115,12 +116,16 @@ if any(SCALE_A ~= 1)
     RESCALE_FEAS = RESCALE_FEAS ./ SCALE_A;
 end
 if SCALE_X ~= 1
+    % If we scale X in advance, 
+    % in the end we need to scale it back
     b = b .* SCALE_X;
     a = a .* SCALE_X;
     RESCALE_OBJ = RESCALE_OBJ / SCALE_X;
     RESCALE_FEAS = RESCALE_FEAS / SCALE_X;
 end
 if SCALE_C ~= 1
+    % If we scale C in advance,
+    % in the end we need to scale it back
     Primitive1 = @(x) Primitive1(x) * SCALE_C;
     RESCALE_OBJ = RESCALE_OBJ / SCALE_C;
 end
@@ -150,6 +155,7 @@ end
 z = zeros(size(b,1),1); % z stores A(X)
 y0 = zeros(size(b,1),1); % y is the dual variable
 y = y0;
+% p_t = pobj = <C, X_t>
 pobj = 0;
 
 % Choose the linear minimization oracle
@@ -164,6 +170,8 @@ end
 
 
 cntTotal = 0; % Oracle counter for Primitive2
+% which is heavily used in eigenvalue calculation
+% and is the computational bottleneck
 
 % Start the timer
 timer = tic;
@@ -178,10 +186,12 @@ for t = 1:T
     beta = beta0*sqrt(t+1);
     eta = 2/(t+1);
     
+    % vt is involved in the computation of D_t
+    % recall that D_t = C + A^*(y_t + beta_t*(z_t - b))
     if FLAG_INCLUSION % Look at Appendix D
         vt = y + beta.*(z - PROJBOX(z + (1/beta).*y));
     else
-        vt = y + beta*(z-b);
+        vt = y + beta*(z-b);  
     end
     % Remember that the argument for the eigenvalue subproblem
     % is D_t, which is defined in (3.4)
@@ -192,7 +202,7 @@ for t = 1:T
     cntTotal = cntTotal + cntInner;
     
     if sig > 0, a_t = min(a); else, a_t = max(a); end
-    u = sqrt(a_t)*u;
+    u = sqrt(a_t)*u; % H is inside \alpha \Delta_n, so we need to scale the eigenvector.
 
     % Check stopping criteria
     if ~isempty(STOPTOL)
@@ -216,8 +226,11 @@ for t = 1:T
                 break;
             end
         else
+            % FeasOrg = ||z - b||, primal feasibility in the original scale
             FeasOrg = norm((z - b) .* RESCALE_FEAS);
-            FeasCond = FeasOrg / max(norm(b_org),1); % norm(z - b);
+            % ||z - b|| / max(1, ||b||)
+            FeasCond = FeasOrg / max(norm(b_org),1); 
+            % A(uu^*)
             AHk = Primitive3(u);
             ObjCond = (pobj - Primitive1(u)'*u + y'*(b - AHk) + beta*(z-b)'*(z - AHk) - 0.5*beta*norm(z-b)^2)*RESCALE_OBJ / max(abs(pobj*RESCALE_OBJ),1);
             if FeasCond <= STOPTOL && ObjCond <= STOPTOL
@@ -234,7 +247,15 @@ for t = 1:T
                         cntTotal = cntTotal + cntInner;
                         if sig > 0, a_t = min(a); else, a_t = max(a); end
                         u = sqrt(a_t)*u;
+                        % A(uu^*) and <AHk, y_t + beta_t(z_t - b)> + u^* C u = \lambda_min(D_t)
                         AHk = Primitive3(u);
+                        % Remember equation 6.8 says 
+                        % <C, X_t> - <C, X^*> <= g_t(X_t) - <y_t, z_t - b> - beta_t/2 ||z_t - b||^2
+                        % and g_t(X_t) = p_t + <y_t + beta_t(z_t - b), z_t> - \lambda_min(D_t),
+                        % D_t = C + A^*(y_t + beta_t(z_t - b))
+                        % surrogate duality gap is 
+                        % p_t - u^* C u + <y_t, b - AHk> + <beta_t(z_t - b), z_t - AHk> - beta_t/2 ||z_t - b||^2
+                        % ObjCond = surrogate duality gap / max(|p_t|,1)
                         ObjCond = (pobj - Primitive1(u)'*u + y'*(b - AHk) + beta*(z-b)'*(z - AHk) - 0.5*beta*norm(z-b)^2)*RESCALE_OBJ / max(abs(pobj*RESCALE_OBJ),1);
                         if ObjCond <= STOPTOL
                             if ~isempty(SAVEHIST), updateErrStructs(); printError(); clearErrStructs(); end
@@ -276,6 +297,7 @@ for t = 1:T
         dualUpdate = z - b;
     end
     
+    %beta_p = sqrt{t+1}, eta = 2/(t+1) 
     sigma = min(beta0, 4 * beta_p * eta^2 * max(a)^2 * NORM_A^2 / norm(dualUpdate)^2);
     
     % Update the DUAL

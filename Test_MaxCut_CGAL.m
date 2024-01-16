@@ -5,7 +5,7 @@
 % NOTE: You need to download data from GSET and locate them to under the
 % "FilesMaxCut/data/G/" folder (resp. DIMACS10, "FilesMaxCut/data/DIMACS10/").
 
-% maxcut_data = 'G/G1'; % you can choose other data files as well
+maxcut_data = 'G67'; % you can choose other data files as well
 % maxcut_data = 'DIMACS10/belgium_osm';
 
 %% Preamble
@@ -15,14 +15,14 @@ addpath solver;
 
 %% Load data
 
-load(['./FilesMaxCut/data/',maxcut_data]);
+A = readSMAT(['~/Gset/',maxcut_data, '.smat']);
 
-n = size(Problem.A,1);
-C = spdiags(Problem.A*ones(n,1),0,n,n) - Problem.A;
+n = size(A,1);
+C = spdiags(A*ones(n,1),0,n,n) - A;
 C = 0.5*(C+C'); % symmetrize if not symmetric
 C = (-0.25).*C;
 
-clearvars Problem;
+clearvars A;
 
 %% Construct the Black Box Oracles for MaxCut SDP
 
@@ -64,7 +64,8 @@ cputimeBegin = cputime;
     'SCALE_X',SCALE_X,... % SCALE_X prescales the primal variable X of the problem
     'SCALE_C',SCALE_C,... % SCALE_C prescales the cost matrix C of the problem
     'errfncs',err,... % err defines the spectral rounding for maxcut
-    'stoptol',0.1); % algorithm stops when 1e-1 relative accuracy is achieved
+    'stoptol',0.1,...
+    'evalsurrogategap', true); % algorithm stops when 1e-1 relative accuracy is achieved
                      
 cputimeEnd = cputime;
 totalTime = toc(timer);
