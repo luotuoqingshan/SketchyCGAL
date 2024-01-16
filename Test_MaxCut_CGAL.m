@@ -64,7 +64,7 @@ cputimeBegin = cputime;
     'SCALE_X',SCALE_X,... % SCALE_X prescales the primal variable X of the problem
     'SCALE_C',SCALE_C,... % SCALE_C prescales the cost matrix C of the problem
     'errfncs',err,... % err defines the spectral rounding for maxcut
-    'stoptol',0.1,...
+    'stoptol',0.001,...
     'evalsurrogategap', true); % algorithm stops when 1e-1 relative accuracy is achieved
                      
 cputimeEnd = cputime;
