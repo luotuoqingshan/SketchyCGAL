@@ -33,6 +33,7 @@ for gid = 1:67
     Primitive1 = @(x) C*x;
     Primitive2 = @(y,x) (y(1:end-1, 1).*x +y(end, 1)*(d'*x) * d);
     Primitive3 = @(x) [x.^2; (d'*x).^2];
+
     a = [0,1.05*n];
     b = [ones(n,1); 0.0];
     
@@ -49,13 +50,16 @@ for gid = 1:67
     
     timer = tic;
     cputimeBegin = cputime;
+    tol = 1e-2;
+
+    ApproxMinEvec = @(x,t) ApproxMinEvecLanczosSE(x, n, ceil(max(t, 1.0/tol)^0.5*log(n))); % Lanczos storage optimal implementation (Storage optimal but requires 2 times more Matrix-vector multiplication)
     
     [out, U, D, y, AX, pobj] = CGAL( n, Primitive1, Primitive2, Primitive3, a, b, R, maxit, beta0, K, ...
         'FLAG_MULTRANK_P1',true,... % This flag informs that Primitive1 can be applied to find AUU' for any size U. 
         'FLAG_MULTRANK_P3',true,... % This flag informs that Primitive1 can be applied to find (A'y)U for any size U.
         'SCALE_X',SCALE_X,... % SCALE_X prescales the primal variable X of the problem
         'SCALE_C',SCALE_C,... % SCALE_C prescales the cost matrix C of the problem
-        'stoptol',1e-1,...
+        'stoptol', tol,...
         'evalsurrogategap', true); % algorithm stops when 1e-3 accuracy is achieved
                          
     cputimeEnd = cputime;
@@ -63,7 +67,8 @@ for gid = 1:67
     
     out.totalTime = totalTime;
     out.totalCpuTime = cputimeEnd - cputimeBegin;
-
+    disp("Total Wall time");
+    disp("Total CPU time");
     disp(out.totalTime);
     disp(out.totalCpuTime);
     
@@ -74,12 +79,15 @@ for gid = 1:67
 
     eigPrimitive = @(x) (C* x + y(1:end-1, 1).*x +y(end, 1)*(d'*x) * d); 
 
-    disp(eigs(eigPrimitive, n, 1, 'smallestreal'));
 
+    total_iter = out.iteration(end, 1);
+    [min_S_eigvec, min_S_eigval, eigiter] = ApproxMinEvec(eigPrimitive, total_iter);
+    disp("Min eigval of S");
+    disp(min_S_eigval);
     out.dimacs.err1 = norm(AX-b)/(1+norm(b));
     out.dimacs.err2 = 0; % this is theoretically 0 for CGAL
     out.dimacs.err3 = 0; % this is theoretically 0 for CGAL
-    out.dimacs.err4 = max(-min(eigs(eigPrimitive, n, 1, 'smallestreal')),0)/(1+norm(C,'fro'));
+    out.dimacs.err4 = max(-min(min_S_eigval),0)/(1+norm(C,'fro'));
     out.dimacs.err5 = (pobj+dobj)/(1+abs(pobj)+abs(dobj));
     out.dimacs.err6 = (pobj + y'*AX)/(1+abs(pobj)+abs(dobj));
     
@@ -97,7 +105,8 @@ for gid = 1:67
     %% Save results
     
     if ~exist(['results/DualMinimumBisection/',maxcut_data],'dir'), mkdir(['results/DualMinimumBisection/',maxcut_data]); end
-    save(['results/DualMinimumBisection/',maxcut_data,'/SketchyCGAL.mat'],'out','-v7.3');
+    save(['results/DualMinimumBisection/',maxcut_data,'/SketchyCGAL-tol-', num2str(tol), '.mat'],'out','-v7.3');
+    
     
 end
 %% Last edit: Alp Yurtsever - July 24, 2020
