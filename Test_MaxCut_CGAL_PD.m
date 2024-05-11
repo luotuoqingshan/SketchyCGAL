@@ -3,7 +3,7 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     addOptional(p, 'graph', 'G1', @ischar);
     addOptional(p, 'seed', 0, @isnumeric);
     addOptional(p, 'R', 10, @isnumeric);
-    addOptional(p, 'tol', 0.1, @isnumeric);
+    addOptional(p, 'tol', 0.01, @isnumeric);
 
     parse(p, varargin{:});
 
@@ -29,7 +29,6 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     C = spdiags(A*ones(n,1),0,n,n) - A;
     C = 0.5*(C+C'); % symmetrize if not symmetric
     C = (-0.25).*C;
-    disp(issparse(C))
 
     clearvars Problem;
     clearvars data;
@@ -96,6 +95,6 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     %% Save results
 
     if ~exist(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL'],'dir'), mkdir(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL']); end
-    save(['~/SDPLR.jl/output/MaxCut/', maxcut_data, '/SketchyCGAL','/SketchyCGAL-R-', num2str(R), '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
+    save(['~/SDPLR.jl/output/MaxCut/', maxcut_data, '/SketchyCGAL/SketchyCGAL-R-', num2str(R), '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
 %% Last edit: Alp Yurtsever - July 24, 2020
