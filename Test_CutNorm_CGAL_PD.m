@@ -1,4 +1,4 @@
-function out = Test_MaxCut_CGAL_PD(varargin)
+function out = Test_CutNorm_CGAL_PD(varargin)
     p = inputParser;
     addOptional(p, 'graph', 'G1', @ischar);
     addOptional(p, 'seed', 0, @isnumeric);
@@ -8,41 +8,45 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     parse(p, varargin{:});
 
     seed = p.Results.seed; % random seed
-    maxcut_data = p.Results.graph;
+    cutnorm_data = p.Results.graph;
     R = p.Results.R; % rank/sketch size parameter
     tol = p.Results.tol; % stopping tolerance
 
 
-    fprintf("Solving MaxCut SDP for %s\n", maxcut_data);
+    fprintf("Solving CutNorm SDP for %s\n", cutnorm_data);
     %% Preamble
     rng(seed,'twister');
+
+    %% Please update these paths before running 
     addpath /homes/huan1754/SketchyCGAL/utils;
     addpath /homes/huan1754/SketchyCGAL/solver;
 
     %% Load data
 
-    %load(['./FilesMaxCut/data/',maxcut_data]);
-    data = load(['~/datasets/graphs/MaxCut/', maxcut_data, '.mat']);
+    %% Modify the path before running
+    data = load(['~/datasets/graphs/CutNorm/', cutnorm_data, '.mat']);
     A = data.A;
+    [m, n] = size(A);
 
-    n = size(A,1);
-    C = spdiags(A*ones(n,1),0,n,n) - A;
-    C = 0.5*(C+C'); % symmetrize if not symmetric
-    C = (-0.25).*C;
+    C = [sparse(m, m) A; A' sparse(n, n)];
+    C = 0.5*C; % symmetrize if not symmetric
+    C = -C; % negate to convert to minimization problem
+    % Interestingly, since cut norm is a norm
+    % cut norm of A and -A are the same
+    % so this negation is not necessary
 
     clearvars Problem;
     clearvars data;
 
-    %% Construct the Black Box Oracles for MaxCut SDP
-
+    %% Construct the Black Box Oracles for CutNorm SDP
     Primitive1 = @(x) C*x;
     Primitive2 = @(y,x) y.*x;
     Primitive3 = @(x) sum(x.^2,2);
-    a = n;
-    b = ones(n,1);
+    a = m+n; % trace bound
+    b = ones(m+n,1);
 
     % Compute scaling factors
-    SCALE_X = 1/n;
+    SCALE_X = 1/(m+n);
     SCALE_C = 1/norm(C,'fro');
 
     %% Solve using SketchyCGAL
@@ -54,7 +58,7 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     timer = tic;
     cputimeBegin = cputime;
 
-    [out, U, D, y, AX, pobj] = CGAL(n, Primitive1, Primitive2, Primitive3, a, b, R, maxit, beta0, K, ...
+    [out, ~, ~, ~, AX, pobj] = CGAL(m+n, Primitive1, Primitive2, Primitive3, a, b, R, maxit, beta0, K, ...
         'FLAG_MULTRANK_P1',true,... % This flag informs that Primitive1 can be applied to find AUU' for any size U. 
         'FLAG_MULTRANK_P3',true,... % This flag informs that Primitive1 can be applied to find (A'y)U for any size U.
         'SCALE_X',SCALE_X,... % SCALE_X prescales the primal variable X of the problem
@@ -68,23 +72,15 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     out.totalTime = totalTime;
     out.totalCpuTime = cputimeEnd - cputimeBegin;
 
-    cutvalue = 0;
-    for repeat = 1 : 100 
-        x = sign(U*randn(size(U, 2), 1));
-        cur_cutvalue = -x'*C*x;
-        cutvalue = max(cutvalue, cur_cutvalue);
-    end
-
-    out.cutvalue = cutvalue;
     out.primalObj = pobj;
     out.primalFeas = norm(AX-b)/(1+norm(b));
 
     %% Save results
 
-    if ~exist(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL'],'dir') 
-        mkdir(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL']); 
+    if ~exist(['~/SDPLR.jl/output/CutNorm/',cutnorm_data, '/SketchyCGAL'],'dir') 
+        mkdir(['~/SDPLR.jl/output/CutNorm/',cutnorm_data, '/SketchyCGAL']); 
     end
-    save(['~/SDPLR.jl/output/MaxCut/', maxcut_data,...
+    save(['~/SDPLR.jl/output/CutNorm/', cutnorm_data,...
      '/SketchyCGAL/SketchyCGAL-R-', num2str(R),...
      '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],...
      'out','-v7.3');

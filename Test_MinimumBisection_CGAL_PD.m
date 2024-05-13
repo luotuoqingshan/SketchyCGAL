@@ -106,6 +106,6 @@ function out = Test_MinimumBisection_CGAL_PD(varargin)
     end
     save(['~/SDPLR.jl/output/MinimumBisection/',minbisec_data,...
         '/SketchyCGAL/SketchyCGAL-R-', num2str(R), '-seed-',...
-        num2str(seed), '-tol', num2str(tol), '.mat'],'out','-v7.3');
+        num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
 %% Last edit: Alp Yurtsever - July 24, 2020

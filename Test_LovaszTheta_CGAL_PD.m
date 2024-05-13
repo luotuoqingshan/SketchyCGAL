@@ -1,4 +1,4 @@
-function out = Test_MaxCut_CGAL_PD(varargin)
+function out = Test_LovaszTheta_CGAL_PD(varargin)
     p = inputParser;
     addOptional(p, 'graph', 'G1', @ischar);
     addOptional(p, 'seed', 0, @isnumeric);
@@ -8,12 +8,12 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     parse(p, varargin{:});
 
     seed = p.Results.seed; % random seed
-    maxcut_data = p.Results.graph;
+    lovasztheta_data = p.Results.graph;
     R = p.Results.R; % rank/sketch size parameter
     tol = p.Results.tol; % stopping tolerance
 
 
-    fprintf("Solving MaxCut SDP for %s\n", maxcut_data);
+    fprintf("Solving Lovasz Theta SDP for %s\n", lovasztheta_data);
     %% Preamble
     rng(seed,'twister');
     addpath /homes/huan1754/SketchyCGAL/utils;
@@ -22,28 +22,54 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     %% Load data
 
     %load(['./FilesMaxCut/data/',maxcut_data]);
-    data = load(['~/datasets/graphs/MaxCut/', maxcut_data, '.mat']);
+    data = load(['~/datasets/graphs/MaxCut/', lovasztheta_data, '.mat']);
     A = data.A;
 
     n = size(A,1);
-    C = spdiags(A*ones(n,1),0,n,n) - A;
-    C = 0.5*(C+C'); % symmetrize if not symmetric
-    C = (-0.25).*C;
+    e = ones(n,1);
 
     clearvars Problem;
     clearvars data;
 
     %% Construct the Black Box Oracles for MaxCut SDP
 
-    Primitive1 = @(x) C*x;
-    Primitive2 = @(y,x) y.*x;
-    Primitive3 = @(x) sum(x.^2,2);
-    a = n;
-    b = ones(n,1);
+    function out = Astary_x(y, x, i, j)
+        n = length(x);
+        out = zeros(n, 1); 
+        for k = 1:length(i)
+            if i(k) == j(k)
+                out(i(k)) = out(i(k)) + y(k) * x(i(k));
+            else
+                out(i(k)) = out(i(k)) + y(k) * x(j(k)) / 2;
+                out(j(k)) = out(j(k)) + y(k) * x(i(k)) / 2;
+            end
+        end
+        e = ones(n, 1);
+        out = out + y(end) .* x;
+    end
+
+    function out = A_xtx(x, i, j)
+        n = length(x);
+        m = length(i);
+        out = zeros(m+1, 1);
+        for k = 1:length(i)
+            out(k) = x(i(k)) * x(j(k));
+        end
+        out(end) = sum(sum(x.^2));
+    end
+
+    [i, j, ~] = find(triu(A));
+    m = length(i);
+    Primitive1 = @(x) -sum(e.*x).*e;
+    Primitive2 = @(y,x) Astary_x(y, x, i, j);
+    Primitive3 = @(x) A_xtx(x, i, j);
+    a = 1;
+    b = zeros(m+1,1);
+    b(end) = 1;
 
     % Compute scaling factors
-    SCALE_X = 1/n;
-    SCALE_C = 1/norm(C,'fro');
+    SCALE_X = 1;
+    SCALE_C = 1/n;
 
     %% Solve using SketchyCGAL
 
@@ -60,31 +86,23 @@ function out = Test_MaxCut_CGAL_PD(varargin)
         'SCALE_X',SCALE_X,... % SCALE_X prescales the primal variable X of the problem
         'SCALE_C',SCALE_C,... % SCALE_C prescales the cost matrix C of the problem
         'stoptol',tol,...
-        'evalsurrogategap', true); 
+        'evalsurrogategap', true,...
+        'carefulstopping', true); 
 
     cputimeEnd = cputime;
     totalTime = toc(timer);
 
     out.totalTime = totalTime;
     out.totalCpuTime = cputimeEnd - cputimeBegin;
-
-    cutvalue = 0;
-    for repeat = 1 : 100 
-        x = sign(U*randn(size(U, 2), 1));
-        cur_cutvalue = -x'*C*x;
-        cutvalue = max(cutvalue, cur_cutvalue);
-    end
-
-    out.cutvalue = cutvalue;
     out.primalObj = pobj;
     out.primalFeas = norm(AX-b)/(1+norm(b));
 
     %% Save results
 
-    if ~exist(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL'],'dir') 
-        mkdir(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL']); 
+    if ~exist(['~/SDPLR.jl/output/LovaszTheta/',lovasztheta_data, '/SketchyCGAL'],'dir') 
+        mkdir(['~/SDPLR.jl/output/LovaszTheta/',lovasztheta_data, '/SketchyCGAL']); 
     end
-    save(['~/SDPLR.jl/output/MaxCut/', maxcut_data,...
+    save(['~/SDPLR.jl/output/LovaszTheta/', lovasztheta_data,...
      '/SketchyCGAL/SketchyCGAL-R-', num2str(R),...
      '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],...
      'out','-v7.3');
