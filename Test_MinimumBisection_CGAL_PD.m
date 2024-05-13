@@ -17,12 +17,13 @@ function out = Test_MinimumBisection_CGAL_PD(varargin)
     fprintf("Solving Minimum Bisection SDP for %s\n", minbisec_data);
     %% Preamble
     rng(seed,'twister');
+    %% Please update these paths before running 
     addpath /homes/huan1754/SketchyCGAL/utils;
     addpath /homes/huan1754/SketchyCGAL/solver;
     
     %% Load data
     
-    %load(['./FilesMaxCut/data/',maxcut_data]);
+    %% Modify the path before running
     data = load(['~/datasets/graphs/MinimumBisection/', minbisec_data, '.mat']);
     A = data.A;
     
@@ -41,7 +42,7 @@ function out = Test_MinimumBisection_CGAL_PD(varargin)
     Primitive2 = @(y,x) (y(1:end-1, 1).*x +y(end, 1)*(e'*x) * e);
     Primitive3 = @(x) [x.^2; (e'*x).^2];
 
-    a = n;
+    a = n; % trace bound
     b = [ones(n,1); 0.0];
     
     % Compute scaling factors

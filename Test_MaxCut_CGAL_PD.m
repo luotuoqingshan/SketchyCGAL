@@ -16,12 +16,13 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     fprintf("Solving MaxCut SDP for %s\n", maxcut_data);
     %% Preamble
     rng(seed,'twister');
+    %% Please update these paths before running 
     addpath /homes/huan1754/SketchyCGAL/utils;
     addpath /homes/huan1754/SketchyCGAL/solver;
 
     %% Load data
 
-    %load(['./FilesMaxCut/data/',maxcut_data]);
+    %% Modify the path before running
     data = load(['~/datasets/graphs/MaxCut/', maxcut_data, '.mat']);
     A = data.A;
 
@@ -38,7 +39,7 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     Primitive1 = @(x) C*x;
     Primitive2 = @(y,x) y.*x;
     Primitive3 = @(x) sum(x.^2,2);
-    a = n;
+    a = n; % trace bound
     b = ones(n,1);
 
     % Compute scaling factors

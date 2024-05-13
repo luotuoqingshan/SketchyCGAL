@@ -16,12 +16,14 @@ function out = Test_LovaszTheta_CGAL_PD(varargin)
     fprintf("Solving Lovasz Theta SDP for %s\n", lovasztheta_data);
     %% Preamble
     rng(seed,'twister');
+    %% Please update these paths before running 
     addpath /homes/huan1754/SketchyCGAL/utils;
     addpath /homes/huan1754/SketchyCGAL/solver;
 
     %% Load data
 
-    %load(['./FilesMaxCut/data/',maxcut_data]);
+    %% Modify the path before running
+    % We use the same graph for Max Cut and Lovasz Theta
     data = load(['~/datasets/graphs/MaxCut/', lovasztheta_data, '.mat']);
     A = data.A;
 
@@ -63,7 +65,7 @@ function out = Test_LovaszTheta_CGAL_PD(varargin)
     Primitive1 = @(x) -sum(e.*x).*e;
     Primitive2 = @(y,x) Astary_x(y, x, i, j);
     Primitive3 = @(x) A_xtx(x, i, j);
-    a = 1;
+    a = 1; % trace bound
     b = zeros(m+1,1);
     b(end) = 1;
 
@@ -88,6 +90,8 @@ function out = Test_LovaszTheta_CGAL_PD(varargin)
         'stoptol',tol,...
         'evalsurrogategap', true,...
         'carefulstopping', true); 
+        % SketchyCGAL stops quickly on lovasz theta problems 
+        % so we use careful stopping to ensure we get an accurate duality bound 
 
     cputimeEnd = cputime;
     totalTime = toc(timer);
