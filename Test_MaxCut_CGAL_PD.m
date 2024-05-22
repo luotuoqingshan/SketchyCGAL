@@ -68,6 +68,7 @@ function out = Test_MaxCut_CGAL_PD(varargin)
 
     out.totalTime = totalTime;
     out.totalCpuTime = cputimeEnd - cputimeBegin;
+    disp(totalTime);
 
     cutvalue = 0;
     for repeat = 1 : 100 
@@ -82,10 +83,10 @@ function out = Test_MaxCut_CGAL_PD(varargin)
 
     %% Save results
 
-    if ~exist(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL'],'dir') 
-        mkdir(['~/SDPLR.jl/output/MaxCut/',maxcut_data, '/SketchyCGAL']); 
+    if ~exist(['~/SDPLR.jl/output/MaxCut/FixedRank/',maxcut_data, '/SketchyCGAL'],'dir') 
+        mkdir(['~/SDPLR.jl/output/MaxCut/FixedRank/',maxcut_data, '/SketchyCGAL']); 
     end
-    save(['~/SDPLR.jl/output/MaxCut/', maxcut_data,...
+    save(['~/SDPLR.jl/output/MaxCut/FixedRank/', maxcut_data,...
      '/SketchyCGAL/SketchyCGAL-R-', num2str(R),...
      '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],...
      'out','-v7.3');
