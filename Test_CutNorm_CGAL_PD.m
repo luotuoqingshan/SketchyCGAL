@@ -77,12 +77,11 @@ function out = Test_CutNorm_CGAL_PD(varargin)
 
     %% Save results
 
-    if ~exist(['~/SDPLR.jl/output/CutNorm/',cutnorm_data, '/SketchyCGAL'],'dir') 
-        mkdir(['~/SDPLR.jl/output/CutNorm/',cutnorm_data, '/SketchyCGAL']); 
+    if ~exist(['~/SketchyCGAL/output/CutNorm/',cutnorm_data],'dir') 
+        mkdir(['~/SketchyCGAL/output/CutNorm/',cutnorm_data]); 
     end
-    save(['~/SDPLR.jl/output/CutNorm/', cutnorm_data,...
-     '/SketchyCGAL/SketchyCGAL-R-', num2str(R),...
-     '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],...
-     'out','-v7.3');
+    save(['~/SketchyCGAL/output/CutNorm/',cutnorm_data,...
+        '/SketchyCGAL-R-', num2str(R), '-seed-',...
+        num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
 %% Last edit: Alp Yurtsever - July 24, 2020

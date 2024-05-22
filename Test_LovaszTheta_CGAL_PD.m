@@ -103,12 +103,11 @@ function out = Test_LovaszTheta_CGAL_PD(varargin)
 
     %% Save results
 
-    if ~exist(['~/SDPLR.jl/output/LovaszTheta/',lovasztheta_data, '/SketchyCGAL'],'dir') 
-        mkdir(['~/SDPLR.jl/output/LovaszTheta/',lovasztheta_data, '/SketchyCGAL']); 
+    if ~exist(['~/SketchyCGAL/output/LovaszTheta/',lovasztheta_data],'dir') 
+        mkdir(['~/SketchyCGAL/output/LovaszTheta/',lovasztheta_data]); 
     end
-    save(['~/SDPLR.jl/output/LovaszTheta/', lovasztheta_data,...
-     '/SketchyCGAL/SketchyCGAL-R-', num2str(R),...
-     '-seed-', num2str(seed), '-tol-', num2str(tol), '.mat'],...
-     'out','-v7.3');
+    save(['~/SketchyCGAL/output/LovaszTheta/',lovasztheta_data,...
+        '/SketchyCGAL-R-', num2str(R), '-seed-',...
+        num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
 %% Last edit: Alp Yurtsever - July 24, 2020
