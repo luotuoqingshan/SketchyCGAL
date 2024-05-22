@@ -1,9 +1,12 @@
+# modify following keywords for your need
 graphs = ["G$i" for i = 1:10]
 seed = 0
 R = 10
 tol = 0.01
 problem = "LovaszTheta"
 
+
+##
 open(homedir()*"/SketchyCGAL/test_$problem.txt", "w") do io
     for graph in graphs
         # make sure we warmup
