@@ -26,8 +26,7 @@ You may need to modify the path a bit to fit your case.
 
 For batch testing, you can run `julia gen_test.jl` to generate a txt file 
 where each line corresponds to one problem instance (install julia if needed). You may want to 
-change the parameters on the top of `gen_test.jl` to fit your need.  
-By default we allow solver 16GB RAM access.
+change the parameters on the top of `gen_test.jl` to fit your need. By default we allow solver 16GB RAM access.
 For fair of comparison, we recommend you to **disable multithreading**. For example, you can add
 the following three lines into your `.bashrc`, and also call matlab with flag 
 `-singleCompThread` (which is automatically set in `gen_test.jl`). 
