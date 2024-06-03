@@ -4,6 +4,7 @@ function out = Test_CutNorm_CGAL_PD(varargin)
     addOptional(p, 'seed', 0, @isnumeric);
     addOptional(p, 'R', 10, @isnumeric);
     addOptional(p, 'tol', 0.01, @isnumeric);
+    addOptional(p, 'path2folder', '~/', @ischar)
 
     parse(p, varargin{:});
 
@@ -11,6 +12,7 @@ function out = Test_CutNorm_CGAL_PD(varargin)
     cutnorm_data = p.Results.graph;
     R = p.Results.R; % rank/sketch size parameter
     tol = p.Results.tol; % stopping tolerance
+    path2folder = p.Results.path2folder; % path to the folder of this repo
 
 
     fprintf("Solving CutNorm SDP for %s\n", cutnorm_data);
@@ -18,13 +20,12 @@ function out = Test_CutNorm_CGAL_PD(varargin)
     rng(seed,'twister');
 
     %% Please update these paths before running 
-    addpath /homes/huan1754/SketchyCGAL/utils;
-    addpath /homes/huan1754/SketchyCGAL/solver;
+    addpath utils;
+    addpath solver;
 
     %% Load data
 
-    %% Modify the path before running
-    data = load(['~/datasets/graphs/CutNorm/', cutnorm_data, '.mat']);
+    data = load([path2folder, 'SketchyCGAL/data/CutNorm/', cutnorm_data, '.mat']);
     A = data.A;
     [m, n] = size(A);
 
@@ -76,12 +77,10 @@ function out = Test_CutNorm_CGAL_PD(varargin)
     out.primalFeas = norm(AX-b)/(1+norm(b));
 
     %% Save results
-
-    if ~exist(['~/SketchyCGAL/output/CutNorm/',cutnorm_data],'dir') 
-        mkdir(['~/SketchyCGAL/output/CutNorm/',cutnorm_data]); 
+    if ~exist([path2folder, 'SketchyCGAL/output/CutNorm/',cutnorm_data],'dir') 
+        mkdir([path2folder, 'SketchyCGAL/output/CutNorm/',cutnorm_data]); 
     end
-    save(['~/SketchyCGAL/output/CutNorm/',cutnorm_data,...
+    save([path2folder, 'SketchyCGAL/output/CutNorm/',cutnorm_data,...
         '/SketchyCGAL-R-', num2str(R), '-seed-',...
         num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
-%% Last edit: Alp Yurtsever - July 24, 2020

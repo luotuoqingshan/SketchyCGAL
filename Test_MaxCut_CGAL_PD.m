@@ -4,6 +4,7 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     addOptional(p, 'seed', 0, @isnumeric);
     addOptional(p, 'R', 10, @isnumeric);
     addOptional(p, 'tol', 0.01, @isnumeric);
+    addOptional(p, 'path2folder', '~/', @ischar)
 
     parse(p, varargin{:});
 
@@ -11,19 +12,20 @@ function out = Test_MaxCut_CGAL_PD(varargin)
     maxcut_data = p.Results.graph;
     R = p.Results.R; % rank/sketch size parameter
     tol = p.Results.tol; % stopping tolerance
+    path2folder = p.Results.path2folder; % path to the folder of this repo
 
 
     fprintf("Solving MaxCut SDP for %s\n", maxcut_data);
     %% Preamble
     rng(seed,'twister');
     %% Please update these paths before running 
-    addpath /homes/huan1754/SketchyCGAL/utils;
-    addpath /homes/huan1754/SketchyCGAL/solver;
+    addpath utils;
+    addpath solver;
 
     %% Load data
 
     %% Modify the path before running
-    data = load(['~/datasets/graphs/MaxCut/', maxcut_data, '.mat']);
+    data = load([path2folder, 'datasets/graphs/MaxCut/', maxcut_data, '.mat']);
     A = data.A;
 
     n = size(A,1);
@@ -68,7 +70,6 @@ function out = Test_MaxCut_CGAL_PD(varargin)
 
     out.totalTime = totalTime;
     out.totalCpuTime = cputimeEnd - cputimeBegin;
-    disp(totalTime);
 
     cutvalue = 0;
     for repeat = 1 : 100 
@@ -83,10 +84,10 @@ function out = Test_MaxCut_CGAL_PD(varargin)
 
     %% Save results
 
-    if ~exist(['~/SketchyCGAL/output/MaxCut/',maxcut_data],'dir') 
-        mkdir(['~/SketchyCGAL/output/MaxCut/',maxcut_data]); 
+    if ~exist([path2folder, 'SketchyCGAL/output/MaxCut/',maxcut_data],'dir') 
+        mkdir([path2folder, 'SketchyCGAL/output/MaxCut/',maxcut_data]); 
     end
-    save(['~/SketchyCGAL/output/MaxCut/',maxcut_data,...
+    save([path2folder, 'SketchyCGAL/output/MaxCut/',maxcut_data,...
         '/SketchyCGAL-R-', num2str(R), '-seed-',...
         num2str(seed), '-tol-', num2str(tol), '.mat'],'out','-v7.3');
 end
