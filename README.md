@@ -4,15 +4,23 @@ This code repo provides implementation for applying
 [SketchyCGAL](https://github.com/alpyurtsever/SketchyCGAL) to 
 three more SDPs, Minimum Bisection, Lovasz Theta and Cut Norm.  It also provides some easy-to-use batch test tool for massive benchmarking.
 
-## Data
+# Installation
+To run the Test_*problem*_CGAL_PD functions, you need to install 
+`matlab`. (I'm using R2022a) 
+
+To generate the batch test txt file, I'm using `Julia`, and 
+[here](https://julialang.org/downloads/) is a short introduction for installing it. No Julia package needs to be installed for running `gen_test.jl`.  
+
+# Data
 Data used in our experiments can be downloaded from [University of Florida Sparse Matrix Collection](https://sparse.tamu.edu/) or [SNAP](https://snap.stanford.edu/data/index.html). We provide one example script for downloading DIMACS10 data, see `download.sh`.
 Here we also include some preprocessed toy Gset graphs for trial usage. Basically each 
 mat file contains one adjacency matrix.
 
 In general, data loading can be easily customized, just modify the data loading part in each 
-code file (e.g. line 29-30 of Test_LovaszTheta_CGAL_PD.m).  
+code file (e.g. line 29-30 of Test_LovaszTheta_CGAL_PD.m),
+and make sure the matrix you provide is an adjacency matrix.  
 
-## Running  
+# Running  
 For a specific SDP problem, its code is in the corresponding Test_*Problem*_CGAL_PD.m file. You can either call the function directly inside 
 matlab or run the batch test script from the shell.
 
@@ -43,6 +51,11 @@ cat test_MaxCut.txt | parallel --jobs 10 --timeout 28800 {}
 Here `--timeout` specifies the time limit, and `--jobs` means the number of 
 parallel jobs you want to run. Keep in mind that you should not set `--jobs` 
 larger than the number of cores you have, which will downgrade the performance.
+
+# Contact
+If you have any question about my implementions of applying 
+`SketchyCGAL` on these problems, feel free to email 
+`huan1754@purdue.edu` or open an issue here. 
 
 # Acknowledgement
 Thanks for the great toolbox `SketchyCGAL` which provides an easy-to-use interface and allows quick development of these experiments. 
